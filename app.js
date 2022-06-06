@@ -9,7 +9,7 @@ app.set('views', path.join(__dirname, 'views'))
 
 
 app.get('/', (req, res) => {
-    res.render('home')
+    res.send('welcome test')
 })
 
 app.listen(4000, () => {
