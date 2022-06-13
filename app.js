@@ -5,6 +5,7 @@ const methodOverride = require('method-override');
 const ejsMate = require('ejs-mate');
 const Campground = require('./models/campground');
 
+
 mongoose.connect('mongodb://localhost:27017/YelpCamp')
 // NOT LONGER NECESSARY 
 //The mongoose package just recently updated to version 6.x after years, 
