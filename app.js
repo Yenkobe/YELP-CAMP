@@ -3,6 +3,8 @@ const path = require('path');
 const mongoose = require('mongoose');
 const methodOverride = require('method-override');
 const ejsMate = require('ejs-mate');
+const ExpressError = require('./helper/ExpressError');
+const catchAsync = require('./helper/catchAsync');
 const Campground = require('./models/campground');
 
 
@@ -39,49 +41,63 @@ app.get('/', (req, res) => {
     res.render('home')
 });
 
-app.get('/campgrounds', async (req, res) => {
+app.get('/campgrounds', catchAsync(async (req, res) => {
+    if (!req.body.campground) throw new ExpressError('Invalid Campground Data', 400);
     const campgrounds = await Campground.find({});
     res.render('campgrounds/index', { campgrounds })
-});
+}));
 
 app.get('/campgrounds/new', (req, res) => {
     res.render('campgrounds/new',)
-})
+});
 
 // to send the new campground we need to do a post
-app.post('/campgrounds', async (req, res) => {
+app.post('/campgrounds', catchAsync(async (req, res, next) => {
     const campground = new Campground(req.body.campground);
     await campground.save();
     res.redirect(`/campgrounds/${campground._id}`)
-})
 
-app.get('/campgrounds/:id', async (req, res) => {
+}));
+
+app.get('/campgrounds/:id', catchAsync(async (req, res) => {
     const campground = await Campground.findById(req.params.id)
     res.render('campgrounds/show', { campground });
-});
+}));
 
-app.get('/campgrounds/:id/edit', async (req, res) => {
+app.get('/campgrounds/:id/edit', catchAsync(async (req, res) => {
     const campground = await Campground.findById(req.params.id)
     res.render('campgrounds/edit', { campground });
-})
+}));
 
 // To fake a put request -- > install npm i method-override
 // create --> const methodOverride = require('method-override');
 // Create -->app.use(methodOverride('_method'));
 // We can move on an create our app.put
 
-app.put('/campgrounds/:id', async (req, res) => {
+app.put('/campgrounds/:id', catchAsync(async (req, res) => {
     const { id } = req.params;
     const campground = await Campground.findByIdAndUpdate(id, { ...req.body.campground })
     res.redirect(`/campgrounds/${campground._id}`)
-})
+}));
 
-app.delete('/campgrounds/:id', async (req, res) => {
+app.delete('/campgrounds/:id', catchAsync(async (req, res) => {
     const { id } = req.params;
     await Campground.findByIdAndDelete(id);
     res.redirect('/campgrounds');
+}));
+
+// Error handler
+app.all('*', (req, res, next) => {
+    next(new ExpressError('Page Not Found', 404))
 })
 
+
+app.use((err, req, res, next) => {
+    const { statusCode = 500 } = err;
+    if (!err.message) err.message = "Something went wrong!"
+    res.status(statusCode).render('error', { err })
+
+})
 
 app.listen(3000, () => {
     console.log('Serving on port 3000')
