@@ -3,9 +3,11 @@ const path = require('path');
 const mongoose = require('mongoose');
 const methodOverride = require('method-override');
 const ejsMate = require('ejs-mate');
+const joi = require('joi');
 const ExpressError = require('./helper/ExpressError');
 const catchAsync = require('./helper/catchAsync');
 const Campground = require('./models/campground');
+const Joi = require('joi');
 
 
 mongoose.connect('mongodb://localhost:27017/YelpCamp')
@@ -42,7 +44,6 @@ app.get('/', (req, res) => {
 });
 
 app.get('/campgrounds', catchAsync(async (req, res) => {
-    if (!req.body.campground) throw new ExpressError('Invalid Campground Data', 400);
     const campgrounds = await Campground.find({});
     res.render('campgrounds/index', { campgrounds })
 }));
@@ -53,6 +54,24 @@ app.get('/campgrounds/new', (req, res) => {
 
 // to send the new campground we need to do a post
 app.post('/campgrounds', catchAsync(async (req, res, next) => {
+    // if (!req.body.campground) throw new ExpressError('Invalid Campground Data', 400);
+    // adding Joi --joi lets you describe your data using a simple, intuitive, and readable language.
+    const campgroundSchema = Joi.object({
+        campground: Joi.object({
+            title: Joi.string().required(),
+            price: Joi.number().required().min(0),
+            image: Joi.string().required(),
+            location: Joi.string().required(),
+            description: Joi.string().required()
+        }).required()
+    })
+    const result = campgroundSchema.validate(req.body);
+    if (error) {
+        // el = each element
+        const msg = error.details.map(el => el.message).join(',')
+        throw new ExpressError(msg, 400)
+    }
+    console.log(result);
     const campground = new Campground(req.body.campground);
     await campground.save();
     res.redirect(`/campgrounds/${campground._id}`)
@@ -94,10 +113,12 @@ app.all('*', (req, res, next) => {
 
 app.use((err, req, res, next) => {
     const { statusCode = 500 } = err;
-    if (!err.message) err.message = "Something went wrong!"
+    if (!err.message) err.message = 'Something went wrong!'
     res.status(statusCode).render('error', { err })
 
 })
+
+
 
 app.listen(3000, () => {
     console.log('Serving on port 3000')
