@@ -18,7 +18,8 @@ mongoose.connect('mongodb://localhost:27017/YelpCamp')
 //      {
 //     useNewUrlParser: true,
 //     useCreateIndex: true,
-//     useUnifiedTopology: true
+//     useUnifiedTopology: true,
+//     useFindAndModify: false
 // });
 
 // logic to check if there is an error
@@ -49,6 +50,7 @@ const sessionConfig = {
         maxAge: 1000 * 60 * 60 * 24 * 7
     }
 }
+
 app.use(session(sessionConfig))
 app.use(flash());
 
