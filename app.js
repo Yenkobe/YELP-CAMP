@@ -6,6 +6,9 @@ const ejsMate = require('ejs-mate');
 const session = require('express-session');
 const flash = require('connect-flash');
 const ExpressError = require('./utils/ExpressError');
+const passport = require('passport');
+const LocalStrategy = require('passport-local');
+const User = require('./models/user');
 
 
 const campgrounds = require('./routes/campgrounds');
@@ -53,6 +56,19 @@ const sessionConfig = {
 
 app.use(session(sessionConfig))
 app.use(flash());
+// as per the docs.... app.use(session) should be always first than app.use(passport.session)
+
+// === configuring Passport ===
+app.use(passport.initialize());
+app.use(passport.session());
+// use static authenticate method of model in LocalStrategy
+passport.use(new LocalStrategy(User.authenticate()));
+
+// use static serialize and deserialize of model for passport session support
+passport.serializeUser(User.serializeUser());
+passport.deserializeUser(User.deserializeUser());
+
+// =============
 
 app.use((req, res, next) => {
     res.locals.success = req.flash('success');
